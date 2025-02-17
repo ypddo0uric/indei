@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>حساب الإعفاء</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap');
+    /* تصميم عصري مع خلفية متدرجة */
+    body {
+      font-family: 'Amiri', serif;
+      background: linear-gradient(to bottom right, #1e3c72, #2a5298);
+      margin: 0;
+      padding: 0;
+      color: #fff;
+      text-align: center;
+    }
+    h1 {
+      margin-top: 20px;
+      font-size: 2.8em;
+      color: #f1c40f;
+      text-shadow: 2px 2px 5px #000;
+    }
+    .container {
+      max-width: 500px;
+      margin: 30px auto;
+      background: #fff;
+      border-radius: 15px;
+      padding: 25px;
+      color: #333;
+      box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3);
+    }
+    label {
+      display: block;
+      font-size: 1.2em;
+      margin-top: 10px;
+      color: #333;
+    }
+    select, input[type="number"] {
+      width: 100%;
+      padding: 10px;
+      font-size: 1em;
+      border: 2px solid #ccc;
+      border-radius: 8px;
+      margin-top: 5px;
+      box-sizing: border-box;
+    }
+    button {
+      margin-top: 15px;
+      padding: 12px 25px;
+      font-size: 1.2em;
+      font-weight: bold;
+      color: #fff;
+      background: linear-gradient(to right, #e74c3c, #c0392b);
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: transform 0.3s, background 0.3s;
+    }
+    button:hover {
+      transform: scale(1.05);
+      background: linear-gradient(to right, #c0392b, #e74c3c);
+    }
+    .result {
+      margin-top: 20px;
+      font-size: 1.3em;
+      padding: 15px;
+      background: #ecf0f1;
+      border-radius: 8px;
+      color: #333;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+    .success {
+      color: #27ae60;
+      font-weight: bold;
+    }
+    .failure {
+      color: #e74c3c;
+      font-weight: bold;
+    }
+    .footer {
+      margin-top: 20px;
+      font-size: 0.9em;
+      color: #777;
+    }
+  </style>
+</head>
+<body>
+  <h1>حساب الإعفاء</h1>
+  <div class="container">
+    <div>
+      <!-- ثلاثة أزرار لتحديد نوع العملية -->
+      <button onclick="showForm('general')">الإعفاء العام</button>
+      <button onclick="showForm('individual')">الإعفاء الفردي</button>
+      <button onclick="showForm('thirdTerm')">حساب درجة الفصل الثاني</button>
+    </div>
+    <form id="calcForm" style="display:none;">
+      <!-- نموذج الإعفاء العام -->
+      <div id="generalFields" style="display:none;">
+        <label for="grade">اختر الصف الدراسي:</label>
+        <select id="grade" onchange="populateSubjects()">
+          <option value="">-- اختر الصف --</option>
+          <option value="1">الصف الأول المتوسط</option>
+          <option value="2">الصف الثاني المتوسط</option>
+          <option value="3">الصف الثالث المتوسط</option>
+          <option value="4">الصف الرابع الإعدادي (علمي)</option>
+          <option value="5">الصف الخامس الإعدادي (علمي)</option>
+          <option value="6">الصف الرابع الإعدادي (أدبي)</option>
+          <option value="7">الصف الخامس الإعدادي (أدبي)</option>
+        </select>
+        <div id="subjectFields"></div>
+      </div>
+      <!-- نموذج الإعفاء الفردي -->
+      <div id="individualFields" style="display:none;">
+        <label for="firstTerm">درجة الفصل الأول:</label>
+        <input type="number" id="firstTerm" min="0" max="100">
+        <label for="midYear">درجة نصف السنة:</label>
+        <input type="number" id="midYear" min="0" max="100">
+        <label for="secondTerm">درجة الفصل الثاني:</label>
+        <input type="number" id="secondTerm" min="0" max="100">
+      </div>
+      <!-- نموذج حساب درجة الفصل الثالث -->
+      <div id="thirdTermFields" style="display:none;">
+        <label for="firstTermThird">درجة الفصل الأول:</label>
+        <input type="number" id="firstTermThird" min="0" max="100">
+        <label for="midYearThird">درجة نصف السنة:</label>
+        <input type="number" id="midYearThird" min="0" max="100">
+      </div>
+      <button type="button" id="submitButton" onclick="handleSubmit()">احسب</button>
+    </form>
+    <div id="result" class="result"></div>
+    <div class="footer">
+      المطور <a href="https://t.me/R_X_Z6" target="_blank">@R_X_Z6</a> للتواصل
+    </div>
+  </div>
+
+  <script>
+    let mode = '';
+
+    /* المواد الدراسية لكل صف وفق النظام العراقي المُحدَّث */
+    const gradeSubjects = {
+      "1": [  
+         "اللغة العربية",
+         "اللغة الإنجليزية",
+         "الرياضيات",
+         "الأحياء",
+         "الكيمياء",
+         "الفيزياء",
+         "التربية الإسلامية",
+         "الاجتماعيات",
+         "الحاسوب"
+      ],
+      "2": [  
+         "اللغة العربية",
+         "اللغة الإنجليزية",
+         "الرياضيات",
+         "الأحياء",
+         "الكيمياء",
+         "الفيزياء",
+         "التربية الإسلامية",
+         "الاجتماعيات",
+         "الحاسوب"
+      ],
+      "3": [  
+         "اللغة العربية",
+         "اللغة الإنجليزية",
+         "الرياضيات",
+         "الأحياء",
+         "الكيمياء",
+         "الفيزياء",
+         "التربية الإسلامية",
+         "الاجتماعيات",
+         "الحاسوب"
+      ],
+      "4": [  
+         "اللغة العربية",
+         "اللغة الإنجليزية",
+         "الرياضيات",
+         "الفيزياء",
+         "الكيمياء",
+         "الأحياء",
+         "التربية الإسلامية",
+         "الحاسوب"
+      ],
+      "5": [  
+         "اللغة العربية",
+         "اللغة الإنجليزية",
+         "الرياضيات",
+         "الفيزياء",
+         "الكيمياء",
+         "الأحياء",
+         "علم الأرض",
+         "التربية الإسلامية",
+         "الحاسوب"
+      ],
+      "6": [  
+         "اللغة العربية",
+         "اللغة الإنجليزية",
+         "الرياضيات",
+         "التاريخ",
+         "الجغرافيا",
+         "الاقتصاد",
+         "التربية الإسلامية",
+         "الحاسوب"
+      ],
+      "7": [  
+         "اللغة العربية",
+         "اللغة الإنجليزية",
+         "الرياضيات",
+         "التاريخ",
+         "الجغرافيا",
+         "الاقتصاد",
+         "الفلسفة",
+         "التربية الإسلامية",
+         "الحاسوب"
+      ]
+    };
+
+    // دالة لتحويل اسم المادة إلى id آمن (بحذف الفراغات)
+    function safeId(subject) {
+      return subject.replace(/\s/g, '');
+    }
+
+    // إظهار النموذج المناسب بناءً على نوع العملية
+    function showForm(type) {
+      mode = type;
+      document.getElementById('calcForm').style.display = 'block';
+      document.getElementById('result').innerHTML = '';
+      // إخفاء جميع النماذج أولاً
+      document.getElementById('generalFields').style.display = 'none';
+      document.getElementById('individualFields').style.display = 'none';
+      document.getElementById('thirdTermFields').style.display = 'none';
+      if (type === 'general') {
+        document.getElementById('generalFields').style.display = 'block';
+      } else if (type === 'individual') {
+        document.getElementById('individualFields').style.display = 'block';
+      } else if (type === 'thirdTerm') {
+        document.getElementById('thirdTermFields').style.display = 'block';
+      }
+    }
+
+    // تعبئة حقول المواد في نموذج الإعفاء العام بناءً على الصف المختار
+    function populateSubjects() {
+      const grade = document.getElementById('grade').value;
+      const subjectFields = document.getElementById('subjectFields');
+      subjectFields.innerHTML = '';
+      if (!grade || !gradeSubjects[grade]) return;
+      
+      // إذا كان الصف الثالث المتوسط، إعلام المستخدم بعدم وجود إعفاء
+      if (grade === "3") {
+        subjectFields.innerHTML = "<p style='color: red; font-weight: bold;'>لا يوجد إعفاء للصف الثالث المتوسط (الاختبارات الوزارية)</p>";
+        return;
+      }
+      
+      gradeSubjects[grade].forEach(subject => {
+        let labelText = subject === "الحاسوب" ? `${subject} (اختياري)` : subject;
+        subjectFields.innerHTML += `
+          <label for="${safeId(subject)}">${labelText}:</label>
+          <input type="number" id="${safeId(subject)}" min="0" max="100">
+        `;
+      });
+    }
+
+    // تحديد العملية بناءً على الزر المُختار
+    function handleSubmit() {
+      if (mode === 'general') {
+        calculateGeneral();
+      } else if (mode === 'individual') {
+        calculateIndividual();
+      } else if (mode === 'thirdTerm') {
+        calculateThirdTerm();
+      }
+    }
+
+    // حساب الإعفاء العام (شروط: جميع الدرجات ≥ 75 ومتوسطها ≥ 85)
+    function calculateGeneral() {
+      const grade = document.getElementById('grade').value;
+      if (!grade || !gradeSubjects[grade]) {
+        alert('يرجى اختيار الصف الدراسي وتعبئة الدرجات.');
+        return;
+      }
+      if (grade === "3") {
+        alert("لا يوجد إعفاء للصف الثالث المتوسط (الاختبارات الوزارية).");
+        return;
+      }
+      const subjects = gradeSubjects[grade];
+      let grades = [];
+      for (let subject of subjects) {
+        const id = safeId(subject);
+        const input = document.getElementById(id);
+        if (subject === "الحاسوب" && (!input.value || input.value.trim() === "")) {
+          continue;
+        }
+        if (!input.value || input.value.trim() === "") {
+          alert(`يرجى إدخال درجة مادة "${subject}"`);
+          return;
+        }
+        let value = parseInt(input.value);
+        if (isNaN(value)) {
+          alert(`يرجى إدخال رقم صالح لمادة "${subject}"`);
+          return;
+        }
+        grades.push(value);
+      }
+      if (grades.length === 0) {
+        alert("يرجى إدخال درجات المواد المطلوبة.");
+        return;
+      }
+      const total = grades.reduce((sum, grade) => sum + grade, 0);
+      const average = total / grades.length;
+      const resultDiv = document.getElementById('result');
+      if (grades.every(grade => grade >= 75) && average >= 85) {
+        resultDiv.innerHTML = `مبروك! حصلت على <span class="success">إعفاء عام 🎉</span><br>متوسط درجاتك: ${average.toFixed(2)}`;
+      } else {
+        resultDiv.innerHTML = `للأسف لم تحصل على <span class="failure">إعفاء عام 😞</span><br>متوسط درجاتك: ${average.toFixed(2)}`;
+      }
+    }
+
+    // حساب الإعفاء الفردي (متوسط الدرجات ≥ 90)
+    function calculateIndividual() {
+      const first = parseInt(document.getElementById('firstTerm').value);
+      const mid = parseInt(document.getElementById('midYear').value);
+      const second = parseInt(document.getElementById('secondTerm').value);
+      if (isNaN(first) || isNaN(mid) || isNaN(second)) {
+        alert('يرجى إدخال درجات جميع الفصول.');
+        return;
+      }
+      const average = (first + mid + second) / 3;
+      const resultDiv = document.getElementById('result');
+      if (average >= 90) {
+        resultDiv.innerHTML = `مبروك! حصلت على <span class="success">إعفاء فردي 🎉</span><br>متوسط المادة: ${average.toFixed(2)}`;
+      } else {
+        resultDiv.innerHTML = `للأسف لم تحصل على <span class="failure">إعفاء فردي 😞</span><br>متوسط المادة: ${average.toFixed(2)}`;
+      }
+    }
+
+    // حساب الدرجة المطلوبة في الفصل الثالث لتحقيق متوسط 90 (الإعفاء الفردي)
+    function calculateThirdTerm() {
+      const first = parseInt(document.getElementById('firstTermThird').value);
+      const mid = parseInt(document.getElementById('midYearThird').value);
+      if (isNaN(first) || isNaN(mid)) {
+        alert("يرجى إدخال درجات الفصل الأول ونصف السنة.");
+        return;
+      }
+      // المطلوب: (first + mid + x) / 3 = 90  =>  x = 270 - (first + mid)
+      let needed = 270 - (first + mid);
+      const resultDiv = document.getElementById('result');
+      if (needed > 100) {
+        resultDiv.innerHTML = "<span class='failure'>المطلوب أكثر من 100 درجة، لا يمكن تحقيق الإعفاء الفردي.</span>";
+      } else if (needed < 0) {
+        resultDiv.innerHTML = "<span class='success'>لقد حققت الإعفاء الفردي بالفعل!</span>";
+      } else {
+        resultDiv.innerHTML = `تحتاج إلى ${needed.toFixed(2)} درجة في الفصل ثاني لتحقيق الإعفاء الفردي.`;
+      }
+    }
+  </script>
+</body>
+</html>  }
+  </script>
+</body>
+</html>
